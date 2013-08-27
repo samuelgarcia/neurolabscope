@@ -5,7 +5,7 @@ neurolabscope
 neurolabscope is python based acquisition system for electrophysiology.
 It is based on pyacq.
 
-You can with a few click:
+You can do with a few clickq:
    * view live signal with a fancy oscilloscope
    * view live time frequency map
    * record data
@@ -13,6 +13,8 @@ You can with a few click:
 You will be able soon:
    * online spike sorting
 
+Supported harware:
+    * see : https://github.com/samuelgarcia/pyacq
 
 
 

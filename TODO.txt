@@ -1,0 +1,6 @@
+ 
+ 
+ Todo:
+   * configure in pyacq
+   * record list.
+   * open recorded signals.
