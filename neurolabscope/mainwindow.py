@@ -5,16 +5,23 @@ Neurolabscope mainwindow.
 
 from PyQt4 import QtCore,QtGui
 import os
+from collections import OrderedDict
 
-
-from pyacq import StreamHandler, FakeMultiSignals, RawDataRecording
+from pyacq import StreamHandler, FakeMultiSignals, RawDataRecording, device_classes
 from pyacq.gui import Oscilloscope
 
+dict_device_classes = OrderedDict()
+for c in device_classes:
+    dict_device_classes[c.__name__] = c
+
 from .guiutil import *
+from .views import views_dict
 
 class MainWindow(QtGui.QMainWindow):
-    def __init__(self, parent  = None):
+    def __init__(self, parent  = None, setup = None):
         QtGui.QMainWindow.__init__(self, parent = parent)
+        
+        
         
         self.setWindowTitle(u'Simple acquisition system')
         self.setWindowIcon(QtGui.QIcon(':/neurolabscope.png'))
@@ -33,6 +40,8 @@ class MainWindow(QtGui.QMainWindow):
         self.recording = False
         
         self.streamhandler = StreamHandler()
+        
+        self.apply_steup(setup)
 
     def createActions(self):
         self.actionConf = QtGui.QAction(u'&Configure', self,
@@ -79,41 +88,41 @@ class MainWindow(QtGui.QMainWindow):
             if self.playing:
                 self.play_pause(play = False)
             event.accept()
-        
-
-    def open_configure(self):
-        pass
-        
+    
+    
+    def apply_steup(self, setup):
+        # close old one
         for dev in self.devices:
             dev.close()
-
-        
-
-        dev = FakeMultiSignals(streamhandler = self.streamhandler)
-        dev.configure( name = 'Test dev',
-                                    nb_channel = 3,
-                                    sampling_rate =10000.,
-                                    buffer_length = 64,
-                                    packet_size = 10,
-                                    )
-        dev.initialize()
-        
-        self.devices = [ dev]
-        
         for dock in self.docks:
-            dock.widget().timer.stop()
+            dock.widget().timer.stop() # FIXME it depends on widget type
             self.removeDockWidget(dock)
         
+        # start new setup
+        self.devices = [ ]
+        for dev_info in setup['devices']:
+            _class = dict_device_classes[dev_info['class']]
+            dev = _class(streamhandler = self.streamhandler)
+            dev.configure(**dev_info['kargs'])
+            dev.initialize()
+            self.devices.append(dev)
+        
         self.docks = [ ]
-        w1 = Oscilloscope(stream = dev.streams[0])
-        dock = QtGui.QDockWidget('Oscilloscope')
-        dock.setObjectName( 'Oscilloscope' )
-        dock.setWidget(w1)
-        self.docks.append(dock)
-        self.addDockWidget(QtCore.Qt.RightDockWidgetArea, dock)            
-        
+        for view in setup['views']:
+            _class = views_dict[view['class']]
+            widget = _class(stream = self.devices[view['device_num']].streams[view['stream_num']])
+            dock = QtGui.QDockWidget(view['name'])
+            dock.setWidget(widget)
+            self.docks.append(dock)
+            self.addDockWidget(QtCore.Qt.RightDockWidgetArea, dock)
+            
         self.actionPlay.setEnabled(True)
-        
+        self.setup = setup
+
+    def open_configure(self):
+        #TODO
+        self.apply_steup()
+
 
     def play_pause(self, play = None):
         
