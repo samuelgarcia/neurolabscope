@@ -2,4 +2,4 @@
 
 from .icons import icons 
 
-from pyacq.gui import *
+from pyacq.gui.guiutil import *

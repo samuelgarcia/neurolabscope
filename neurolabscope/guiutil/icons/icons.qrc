@@ -1,19 +1,25 @@
 <!DOCTYPE RCC><RCC version="1.0">
 	<qresource>
+			<file alias="Oscilloscope.png">png/Oscilloscope.png</file>
 			<file alias="document-save.png">png/document-save.png</file>
 			<file alias="media-playback-start.png">png/media-playback-start.png</file>
 			<file alias="edit-redo.png">png/edit-redo.png</file>
 			<file alias="fileclose.png">png/fileclose.png</file>
+			<file alias="AnalogInput.png">png/AnalogInput.png</file>
 			<file alias="configure.png">png/configure.png</file>
 			<file alias="help-about.png">png/help-about.png</file>
+			<file alias="device.png">png/device.png</file>
 			<file alias="document-properties.png">png/document-properties.png</file>
 			<file alias="media-playback-pause.png">png/media-playback-pause.png</file>
+			<file alias="DigitalInput.png">png/DigitalInput.png</file>
 			<file alias="neurolabscope.png">png/neurolabscope.png</file>
 			<file alias="reload.png">png/reload.png</file>
 			<file alias="camera-photo.png">png/camera-photo.png</file>
 			<file alias="list-add.png">png/list-add.png</file>
 			<file alias="media-playback-stop.png">png/media-playback-stop.png</file>
+			<file alias="TimeFreq.png">png/TimeFreq.png</file>
 			<file alias="document-open-folder.png">png/document-open-folder.png</file>
+			<file alias="OscilloscopeDigital.png">png/OscilloscopeDigital.png</file>
 			<file alias="magic.png">png/magic.png</file>
 			<file alias="preferences-system.png">png/preferences-system.png</file>
 			<file alias="list-remove.png">png/list-remove.png</file>
