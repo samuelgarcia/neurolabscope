@@ -16,6 +16,7 @@ for c in device_classes:
 
 from .guiutil import *
 from .views import views_dict
+from .configure import ConfigWindow
 
 class MainWindow(QtGui.QMainWindow):
     def __init__(self, parent  = None, setup = None):
@@ -41,7 +42,7 @@ class MainWindow(QtGui.QMainWindow):
         
         self.streamhandler = StreamHandler()
         
-        self.apply_steup(setup)
+        self.apply_setup(setup)
 
     def createActions(self):
         self.actionConf = QtGui.QAction(u'&Configure', self,
@@ -90,7 +91,7 @@ class MainWindow(QtGui.QMainWindow):
             event.accept()
     
     
-    def apply_steup(self, setup):
+    def apply_setup(self, setup):
         # close old one
         for dev in self.devices:
             dev.close()
@@ -103,14 +104,14 @@ class MainWindow(QtGui.QMainWindow):
         for dev_info in setup['devices']:
             _class = dict_device_classes[dev_info['class']]
             dev = _class(streamhandler = self.streamhandler)
-            dev.configure(**dev_info['kargs'])
+            dev.configure(**dev_info['global_params'])
             dev.initialize()
             self.devices.append(dev)
         
         self.docks = [ ]
         for view in setup['views']:
             _class = views_dict[view['class']]
-            widget = _class(stream = self.devices[view['device_num']].streams[view['stream_num']])
+            widget = _class(stream = self.devices[view['device_num']].streams[view['subdevice_num']])
             dock = QtGui.QDockWidget(view['name'])
             dock.setWidget(widget)
             self.docks.append(dock)
@@ -120,8 +121,10 @@ class MainWindow(QtGui.QMainWindow):
         self.setup = setup
 
     def open_configure(self):
-        #TODO
-        self.apply_steup()
+        w = ConfigWindow(parent = self, setup = self.setup)
+        #~ w.setWindowFlags(QtCore.Qt.Dialog)
+        if w.exec_():
+            self.apply_setup(w.get_setup())
 
 
     def play_pause(self, play = None):

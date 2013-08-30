@@ -7,7 +7,7 @@ default_setup = {
         {
             'class' : 'FakeMultiSignals',
             'board_name' : 'fake  analog input'.format(n),
-            'global_param' : {
+            'global_params' : {
                                             'sampling_rate' : 1000.,
                                             'buffer_length' : 60.,
                                             'nb_channel' : n,

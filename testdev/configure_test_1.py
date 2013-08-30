@@ -13,6 +13,7 @@ def test1():
     w.show()
     
     app.exec_()
+    print w.get_setup()
 
 
 
