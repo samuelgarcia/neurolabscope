@@ -275,7 +275,6 @@ class NewDeviceDialog(QtGui.QDialog):
                 self.list.addItem(item)
                 item.setIcon(QtGui.QIcon(':/device.png'))
                 self.scans.append((name, info_device))
-                
     
     def get(self):
         l = self.list.selectedIndexes()

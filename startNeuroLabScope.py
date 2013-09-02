@@ -9,14 +9,15 @@ from neurolabscope.mainwindow import MainWindow
 from neurolabscope.default_setup import default_setup
 import json
 
-if len(sys.argv)==1:
-    setup = default_setup
-else:
-    filename = sys.argv[1]
-    setup = json.load(open(filename))
+if __name__== '__main__':
+    if len(sys.argv)==1:
+        setup = default_setup
+    else:
+        filename = sys.argv[1]
+        setup = json.load(open(filename))
 
-app = QApplication(sys.argv)
-w = MainWindow(setup = setup)
-w.show()
-sys.exit(app.exec_())
+    app = QApplication(sys.argv)
+    w = MainWindow(setup = setup)
+    w.show()
+    sys.exit(app.exec_())
 
