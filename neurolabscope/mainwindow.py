@@ -104,7 +104,8 @@ class MainWindow(QtGui.QMainWindow):
         for dev_info in setup['devices']:
             _class = dict_device_classes[dev_info['class']]
             dev = _class(streamhandler = self.streamhandler)
-            dev.configure(**dev_info['global_params'])
+            dev.configure(subdevices = dev_info['subdevices'],
+                                **dev_info['global_params'])
             dev.initialize()
             self.devices.append(dev)
         
@@ -122,7 +123,6 @@ class MainWindow(QtGui.QMainWindow):
 
     def open_configure(self):
         w = ConfigWindow(parent = self, setup = self.setup)
-        #~ w.setWindowFlags(QtCore.Qt.Dialog)
         if w.exec_():
             self.apply_setup(w.get_setup())
 

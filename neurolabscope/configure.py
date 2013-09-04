@@ -180,7 +180,9 @@ class ConfigWindow(QtGui.QDialog):
         item = self.tree.selectedItems()[0]
         d = ConfigDeviceWidget( params = item.params)
         if d.exec_():
-            print d.get()
+            #~ print d.get()
+            item.params = d.get()
+            
         
     
     def add_view(self):
@@ -283,28 +285,100 @@ class NewDeviceDialog(QtGui.QDialog):
             
 
 
-#TODO
 class ConfigDeviceWidget(QtGui.QDialog):
     def __init__(self, parent = None, params = None):
         QtGui.QDialog.__init__(self, parent)
         
-        self.params = copy.deepcopy(params)
+        self.resize(600, 800)
         
-
+        self.fix_parms = copy.deepcopy(params)
+        
         self.setWindowTitle(u'Configure device')
         self.setWindowIcon(QtGui.QIcon(':/neurolabscope.png'))
 
         mainlayout = QtGui.QVBoxLayout()
         self.setLayout(mainlayout)
 
+        self.treeParam = pg.parametertree.ParameterTree()
+        self.treeParam.header().hide()
+        mainlayout.addWidget(self.treeParam)
+        
+        conv = {str : 'str', float : 'float',  int : 'int' }
+
+        all = [ ]
+        for k, v in params['global_params'].items():
+            #~ if k in ['subdevices' , 'class', ] : continue
+            if type(v) in conv :
+                d = { 'name' : k, 'type' : conv[type(v)], 'value' : v }
+                all.append(d)
+        
+        self.subdev_names= [ ]
+        for sub in params['subdevices' ]:
+            subparams = [ ]
+            print sub
+            n = sub['nb_channel']
+            for i in range(n):
+                bychannel = [ ]
+                
+                channel_index = sub['by_channel_params']['channel_indexes'][i]
+                
+                
+                for k, v in sub['by_channel_params'].items():
+                    if k=='channel_indexes' :
+                        continue
+                    elif k=='channel_selection' :
+                        bychannel.append({ 'name' : 'selected', 'type' :'bool', 'value' : v[i] })
+                    elif k== 'channel_names':
+                        bychannel.append({ 'name' : 'name', 'type' :'str', 'value' : v[i] })
+                    #~ elif k=='channel_ranges':
+                        #~ bychannel.append({ 'name' : 'AD_range', 'type' :'range', 'value' : v[i] })
+                    else:
+                        pass
+                        #~ if type(v[i]) in conv :
+                            #~ bychannel.append({ 'name' : k, 'type' : conv[type(v[i])], 'value' : v[i] })
+                    #~ bychannel.append({ 'name' : k, 'type' :'float', 'value' : 1. })
+                    
+                d = { 'name' : 'Channel {}'.format(channel_index), 'type' : 'group', 'children' : bychannel }
+                subparams.append(d)
+                
+            #~ sub['by_channel_params']
+            name = '{type} {nb_channel} channels'.format(**sub) if 'nb_channel' in sub else sub['type']
+            d = { 'name' : name, 'type' : 'group', 'children' : subparams }
+            self.subdev_names.append(name)
+            all.append(d)
+        
+        self.params = pg.parametertree.Parameter.create(name='Parameters for {}'.format(params['board_name']), type='group', children=all)
+        
+        self.treeParam.setParameters(self.params, showTop=True)
+        
+        
+         
+        
         buttonBox = QtGui.QDialogButtonBox(QtGui.QDialogButtonBox.Ok| QtGui.QDialogButtonBox.Cancel)
         mainlayout.addWidget(buttonBox)
         buttonBox.accepted.connect(self.accept)
         buttonBox.rejected.connect(self.reject)
+        
+        
 
 
     def get(self):
-        return
+        
+        params = self.fix_parms
+        d = get_dict_from_group_param(self.params, cascade = False)
+        params['global_params'].update(d)
+        
+        for s,sub in enumerate(params['subdevices' ]):
+            subparams = self.params.param(self.subdev_names[s])
+            for i, channel_params in enumerate(subparams.children()):
+                for p in channel_params:
+                    if p.name() == 'name':
+                        sub['by_channel_params']['channel_names'][i] = p.value()
+                    elif p.name() == 'selected':
+                        sub['by_channel_params']['channel_selection'][i] = p.value()
+                    #~ elif p.name() == 'AD_range':
+        
+        return params
 
 
 

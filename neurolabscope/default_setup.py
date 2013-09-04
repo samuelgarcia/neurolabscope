@@ -1,33 +1,9 @@
 # -*- coding: utf-8 -*-
 
-
-n = 4
+from pyacq import FakeMultiSignals
+print FakeMultiSignals.get_available_devices().values()[0]
 default_setup = {
-    'devices' : [
-        {
-            'class' : 'FakeMultiSignals',
-            'board_name' : 'fake  analog input'.format(n),
-            'global_params' : {
-                                            'sampling_rate' : 1000.,
-                                            'buffer_length' : 60.,
-                                            'nb_channel' : n,
-                                            'packet_size' : 10, 
-            },
-            'subdevices' : [
-                {
-                    'type' : 'AnalogInput',
-                    'nb_channel' : n,
-                    'global_param' : {},
-                    'by_channel_param' : {
-                        'ai_channel_indexes' : range(n),
-                        'ai_channel_names' : [ 'AI Channel {}'.format(i) for i in range(n)],
-                    },
-                },
-            ]
-        },
-    ],
-
-    
+    'devices' : [ FakeMultiSignals.get_available_devices().values()[0] ],
     'views' : [
         {
             'class' : 'Oscilloscope',
@@ -42,6 +18,3 @@ default_setup = {
 }
 
 
-
-#~ import json
-#~ json.dump(default_setup,open('setup_test.json', 'wb'), indent=4, separators=(',', ': '))
