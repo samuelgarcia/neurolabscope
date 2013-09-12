@@ -313,7 +313,7 @@ class ConfigDeviceWidget(QtGui.QDialog):
                 all.append(d)
         
         self.subdev_names= [ ]
-        for sub in params['subdevices' ]:
+        for s, sub in enumerate(params['subdevices' ]):
             subparams = [ ]
             print sub
             n = sub['nb_channel']
@@ -342,7 +342,7 @@ class ConfigDeviceWidget(QtGui.QDialog):
                 subparams.append(d)
                 
             #~ sub['by_channel_params']
-            name = '{type} {nb_channel} channels'.format(**sub) if 'nb_channel' in sub else sub['type']
+            name = '{} {type} {nb_channel} channels'.format(s, **sub) if 'nb_channel' in sub else sub['type']
             d = { 'name' : name, 'type' : 'group', 'children' : subparams }
             self.subdev_names.append(name)
             all.append(d)
