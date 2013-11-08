@@ -1,6 +1,7 @@
  
  
  Todo:
-   * configure in pyacq
+   * setup auto load
+   * configure in pyacq  for Oscilloscope+TimeFreq
    * record list.
    * open recorded signals.

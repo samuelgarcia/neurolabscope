@@ -10,14 +10,25 @@ import copy
 import json
 
 from .guiutil import icons, get_dict_from_group_param, set_dict_to_param_group
-from .default_setup import default_setup
-from pyacq import device_classes
 
+from pyacq import device_classes
+import  pyacq.gui.guiutil.mypyqtgraph as mypg
 
 subdevice_to_view = {
     'AnalogInput': ['Oscilloscope', 'TimeFreq'],
     'DigitalInput':  ['OscilloscopeDigital'],
 }
+
+_params_options = [
+                                        { 'name' : 'recording_mode', 'type' :'list', 'values' : ['continuous', ] },
+                                        { 'name' : 'filename_mode', 'type' :'list', 'values' : ['Ask on record',  'Generate with metadata',  ] },
+                                        { 'name' : 'show_metadata_tool', 'type' :'bool', 'value' : False },
+                                        { 'name' : 'show_file_list', 'type' :'bool', 'value' : False },
+                                        { 'name' : 'auto_save_setup_on_exit', 'type' :'bool', 'value' : True },
+                                        
+                                    ]
+
+from .default_setup import default_setup
 
 
 class ConfigWindow(QtGui.QDialog):
@@ -33,6 +44,8 @@ class ConfigWindow(QtGui.QDialog):
         
         mainlayout = QtGui.QVBoxLayout()
         self.setLayout(mainlayout)
+        
+
         
         # actions
         self.toolbar = QtGui.QToolBar()
@@ -66,27 +79,58 @@ class ConfigWindow(QtGui.QDialog):
         self.actRemoveView = QtGui.QAction(u'&Remove view', self,icon =QtGui.QIcon(':/list-remove.png'))
         self.actRemoveView.triggered.connect(self.remove_view)
 
-        
-        # treeview
-        #~ self.tree = pg.TreeWidget()
-        self.tree = QtGui.QTreeWidget()
-        mainlayout.addWidget(self.tree)
-        self.tree.setIconSize(QtCore.QSize(64, 40))
-        self.set_setup(setup)
-        self.tree.expandAll()
-        self.tree.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
-        self.tree.customContextMenuRequested.connect(self.context_menu)
-        mainlayout.addWidget(QtGui.QLabel('Right click on item to remove add views'))
 
+        self.tab = QtGui.QTabWidget()
+        mainlayout.addWidget(self.tab)
+
+        
+        # Tab 1 : treeview device
+        #~ self.tree_devices = pg.TreeWidget()
+        tab1 = QtGui.QWidget()
+        v1 = QtGui.QVBoxLayout()
+        tab1.setLayout(v1)
+        self.tab.addTab(tab1, 'Devices')
+        
+        self.tree_devices = QtGui.QTreeWidget()
+        #~ mainlayout.addWidget(self.tree_devices)
+        v1.addWidget(self.tree_devices)
+        self.tree_devices.setIconSize(QtCore.QSize(64, 40))
+        self.tree_devices.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.tree_devices.customContextMenuRequested.connect(self.context_menu)
+        #~ mainlayout.addWidget(QtGui.QLabel('Right click on item to remove add views'))
+        v1.addWidget(QtGui.QLabel('Right click on item to remove add views'))
+        
+        # Tab 2 : treeview device
+        tab2 = QtGui.QWidget()
+        v2 = QtGui.QVBoxLayout()
+        tab2.setLayout(v2)
+        self.tab.addTab(tab2, 'Options')
+        
+        self.tree_options = pg.parametertree.ParameterTree()
+        v2.addWidget(self.tree_options)
+        self.tree_options.header().hide()
+        self.param_options = pg.parametertree.Parameter.create(name='options', type='group', children=_params_options)
+        self.tree_options.setParameters(self.param_options)
+        
+        #~ mypg.get_dict_from_group_param
+        #~ mypg.set_dict_to_param_group
+        
+
+        # save/cancel
         buttonBox = QtGui.QDialogButtonBox(QtGui.QDialogButtonBox.Ok| QtGui.QDialogButtonBox.Cancel)
         mainlayout.addWidget(buttonBox)
         buttonBox.accepted.connect(self.accept)
         buttonBox.rejected.connect(self.reject)
+
+
+        self.set_setup(setup)
+        self.tree_devices.expandAll()
+        self.setup_filename = None
         
     
     
     def set_setup(self, setup):
-        self.tree.clear()
+        self.tree_devices.clear()
         self.setup = setup
         
         for dev in self.setup['devices']:
@@ -94,7 +138,7 @@ class ConfigWindow(QtGui.QDialog):
             item.setIcon(0, QtGui.QIcon(':/device.png'))
             item.type = 'device'
             item.params = dev
-            self.tree.addTopLevelItem(item)
+            self.tree_devices.addTopLevelItem(item)
             for sub in dev['subdevices']:
                 name = '{type} {nb_channel} channels'.format(**sub) if 'nb_channel' in sub else sub['type']
                 subitem  = QtGui.QTreeWidgetItem([name])
@@ -103,18 +147,20 @@ class ConfigWindow(QtGui.QDialog):
                 item.addChild(subitem)
             
         for view in self.setup['views']:
-            subitem = self.tree.topLevelItem(view['device_num']).child(view['subdevice_num'])
+            subitem = self.tree_devices.topLevelItem(view['device_num']).child(view['subdevice_num'])
             viewitem = QtGui.QTreeWidgetItem(['{name}'.format(**view )])
             viewitem.setIcon(0, QtGui.QIcon(':/{}.png'.format(view['class'])))
             viewitem.type = 'view'
             viewitem.params = view
             subitem.addChild(viewitem)
         
+        mypg.set_dict_to_param_group(self.param_options, self.setup['options'], cascade = True)
+        
 
     def get_setup(self):
         setup ={'devices':[ ], 'views' : [ ] }
-        for d in range(self.tree.topLevelItemCount()):
-            devitem = self.tree.topLevelItem(d)
+        for d in range(self.tree_devices.topLevelItemCount()):
+            devitem = self.tree_devices.topLevelItem(d)
             setup['devices'].append(devitem.params)
             for s,subdev in enumerate(devitem.params['subdevices']):
                 subitem = devitem.child(s)
@@ -124,6 +170,8 @@ class ConfigWindow(QtGui.QDialog):
                     p['device_num'] = d
                     p['subdevice_num'] = s
                     setup['views'].append(p)
+        setup['options'] = mypg.get_dict_from_group_param(self.param_options, cascade = True)
+        
         return setup
     
     def load_setup(self):
@@ -132,6 +180,8 @@ class ConfigWindow(QtGui.QDialog):
         if fd.exec_():
             filename = unicode(fd.selectedFiles()[0])
             self.set_setup(json.load(open(filename, 'rb')))
+            self.setup_filename = filename
+            
 
         
     def save_setup(self):
@@ -140,7 +190,10 @@ class ConfigWindow(QtGui.QDialog):
         if fd.exec_():
             filename = unicode(fd.selectedFiles()[0])
             json.dump(self.get_setup(),open(filename, 'wb'), indent=4, separators=(',', ': '))
-
+            self.setup_filename = filename
+    
+    
+    ## devices
     def add_device(self):
         
         d = NewDeviceDialog()
@@ -152,7 +205,7 @@ class ConfigWindow(QtGui.QDialog):
             item.setIcon(0, QtGui.QIcon(':/device.png'))
             item.type = 'device'
             item.params = info_device
-            self.tree.addTopLevelItem(item)
+            self.tree_devices.addTopLevelItem(item)
             for sub in info_device['subdevices']:
                 name = '{type} {nb_channel} channels'.format(**sub) if 'nb_channel' in sub else sub['type']
                 subitem  = QtGui.QTreeWidgetItem([name])
@@ -166,18 +219,20 @@ class ConfigWindow(QtGui.QDialog):
                 viewitem = QtGui.QTreeWidgetItem([name])
                 viewitem.setIcon(0, QtGui.QIcon(':/{}.png'.format(view_class)))
                 viewitem.type = 'view'
-                viewitem.params = {'class':view_class, 'name': name, 'kargs': {}, }
+                viewitem.params = {'class':view_class, 'name': name, 'params': {}, }
                 subitem.addChild(viewitem)
+                
+                self.tab.setCurrentIndex(0)
     
     
     def remove_device(self):
-        l = self.tree.selectedIndexes()
+        l = self.tree_devices.selectedIndexes()
         if len(l) == 0: return
         index = l[0]
-        self.tree.takeTopLevelItem(index.row())
+        self.tree_devices.takeTopLevelItem(index.row())
     
     def config_device(self):
-        item = self.tree.selectedItems()[0]
+        item = self.tree_devices.selectedItems()[0]
         d = ConfigDeviceWidget( params = item.params)
         if d.exec_():
             #~ print d.get()
@@ -186,11 +241,11 @@ class ConfigWindow(QtGui.QDialog):
         
     
     def add_view(self):
-        l = self.tree.selectedItems()
+        l = self.tree_devices.selectedItems()
         if len(l) == 0: return
         subitem = l[0]
         devitem = subitem.parent()
-        num_subdevice = self.tree.selectedIndexes()[0].row()
+        num_subdevice = self.tree_devices.selectedIndexes()[0].row()
         subdev = devitem.params['subdevices'][num_subdevice]
         
         menu = QtGui.QMenu()
@@ -208,22 +263,22 @@ class ConfigWindow(QtGui.QDialog):
         viewitem = QtGui.QTreeWidgetItem([name])
         viewitem.setIcon(0, QtGui.QIcon(':/{}.png'.format(view_class)))
         viewitem.type = 'view'
-        viewitem.params = {'class':view_class, 'name': name, 'kargs': {}, }
+        viewitem.params = {'class':view_class, 'name': name, 'params': {}, }
         subitem.addChild(viewitem)
         
     def remove_view(self):
-        l = self.tree.selectedItems()
+        l = self.tree_devices.selectedItems()
         if len(l) == 0: return
         item = l[0]
-        item.parent().takeChild(self.tree.selectedIndexes()[0].row())
+        item.parent().takeChild(self.tree_devices.selectedIndexes()[0].row())
 
     
     def context_menu(self):
         menu = QtGui.QMenu()
-        if len(self.tree.selectedItems())==0:
+        if len(self.tree_devices.selectedItems())==0:
             menu.addActions([self.actAddDev])
         else:
-            t = self.tree.selectedItems()[0].type
+            t = self.tree_devices.selectedItems()[0].type
             if t == 'device':
                 menu.addActions([self.actConfigDev, self.actRemoveDev])
             elif t == 'subdevice':
@@ -231,7 +286,9 @@ class ConfigWindow(QtGui.QDialog):
             elif t == 'view':
                 menu.addAction(self.actRemoveView)
         act = menu.exec_(self.cursor().pos())
-        
+    
+    ## Options
+    
 
 
 

@@ -6,12 +6,12 @@ import os.path
 from PyQt4.QtGui import QApplication
 from neurolabscope.mainwindow import MainWindow
 
-from neurolabscope.default_setup import default_setup
+#~ from neurolabscope.default_setup import default_setup
 import json
 
 if __name__== '__main__':
     if len(sys.argv)==1:
-        setup = default_setup
+        setup = None
     else:
         filename = sys.argv[1]
         setup = json.load(open(filename))
