@@ -8,6 +8,8 @@ import os
 from collections import OrderedDict
 import json
 import copy
+import datetime
+
 
 from pyacq import StreamHandler, FakeMultiSignals, RawDataRecording, device_classes
 from pyacq.gui import Oscilloscope
@@ -21,6 +23,7 @@ from .guiutil import icons, PickleSettings
 from .views import views_dict
 from .configure import ConfigWindow
 from .metadatatool import MetadataWidget
+from .recordinglist import RecordingList
 from .version import version
 from .default_setup import default_setup
 
@@ -35,12 +38,13 @@ class MainWindow(QtGui.QMainWindow):
             setup = default_setup
             
             filename = self.settings['last_setup_filname']
-            print filename
+            #~ print filename
             if filename is not None and os.path.exists(filename):
                 try:
                     setup = json.load(open(filename))
                 except:
-                    print 'erreur reading setup'
+                    self.warning_setup(filename)
+                    
         
         
         self.setWindowTitle(u'Simple acquisition system')
@@ -67,13 +71,13 @@ class MainWindow(QtGui.QMainWindow):
         setup['options'].update(d)
         
         
-        self.apply_setup(setup)
-        #~ try:
-            #~ self.apply_setup(setup)
-        #~ except:
-            #~ print 'Problem loading setup...'
-            #~ setup = default_setup
-            #~ self.apply_setup(setup)
+        #~ self.apply_setup(setup)
+        try:
+            self.apply_setup(setup)
+        except:
+            self.warning_setup(filename)
+            setup = default_setup
+            self.apply_setup(setup)
             
 
     def createActions(self):
@@ -95,7 +99,7 @@ class MainWindow(QtGui.QMainWindow):
                                                                 icon =QtGui.QIcon(':/media-record.png'),
                                                                 enabled = False,
                                                                 )
-        self.actionRec.triggered.connect(self.rec_stop)
+        self.actionRec.triggered.connect(self.on_rec_button_pushed)
 
 
 
@@ -112,7 +116,7 @@ class MainWindow(QtGui.QMainWindow):
         self.toolbar.addAction(self.actionConf, )
         self.toolbar.addAction(self.actionPlay, )
         self.toolbar.addAction(self.actionRec, )
-
+    
 
     def closeEvent(self, event):
         if self.recording:
@@ -122,6 +126,14 @@ class MainWindow(QtGui.QMainWindow):
                 self.play_pause(play = False)
             event.accept()
     
+    def warning_setup(self, filename = None):
+        text = u'Setup file contains errors.'
+        if filename is not None:
+            text += ' ({})'.format(filename)
+        mb = QtGui.QMessageBox.warning(self, u'Setup file problem',text, 
+                QtGui.QMessageBox.Ok ,  QtGui.QMessageBox.Default  | QtGui.QMessageBox.Escape,
+                QtGui.QMessageBox.NoButton)
+        
     
     def apply_setup(self, setup):
         # close old one
@@ -158,6 +170,11 @@ class MainWindow(QtGui.QMainWindow):
         
         # Global options
         self.setup = setup
+        
+        # consistency
+        if self.setup['options']['filename_mode'] == 'Generate with metadata':
+            self.setup['options']['show_metadata_tool'] = True
+        
         if self.setup['options']['show_metadata_tool']:
             param_metadata = self.setup.get('param_metadata', None)
             self.metadata_widget = MetadataWidget(param_metadata = param_metadata)
@@ -173,7 +190,16 @@ class MainWindow(QtGui.QMainWindow):
             
             
         if self.setup['options']['show_file_list']:
-            pass
+            self.reclist_widget = RecordingList()
+            dock = QtGui.QDockWidget('RecordingList')
+            dock.setWidget(self.reclist_widget)
+            self.docks.append(dock)
+            self.dock_reclist = dock
+            self.addDockWidget(QtCore.Qt.BottomDockWidgetArea, dock)
+        
+        p = self.setup['options']['recording_directory']
+        QtCore.QDir(p).mkpath(p)
+        
         
 
     def save_setup(self, filename):
@@ -204,7 +230,7 @@ class MainWindow(QtGui.QMainWindow):
             self.playing = play
             self.actionPlay.setChecked(play)
         
-        print self.playing
+        
         if self.playing:
             # start devices
             self.actionRec.setEnabled(True)
@@ -220,34 +246,80 @@ class MainWindow(QtGui.QMainWindow):
             
             for dev in self.devices:
                 dev.stop()
-    
 
-    def rec_stop(self):
-        self.recording = self.actionRec.isChecked()
-        print self.recording
-        if self.recording:
-            # start rec
-            fd = QtGui.QFileDialog(fileMode= QtGui.QFileDialog.Directory, acceptMode = QtGui.QFileDialog.AcceptSave)
+    def get_new_dirname(self, now = None):
+        # TODO get basename
+        #~ basename = os.environ['HOME']#TODO
+        #~ basename = unicode(QtCore.QDir.homePath())
+        basename = self.setup['options']['recording_directory']
+        
+        if self.setup['options']['filename_mode'] == 'Ask on record':
+            fd = QtGui.QFileDialog(  fileMode= QtGui.QFileDialog.AnyFile,
+                                                        acceptMode = QtGui.QFileDialog.AcceptSave,
+                                                        options = QtGui.QFileDialog.ShowDirsOnly)
+            fd.setDirectory(QtCore.QString(basename))
             if fd.exec_():
-                
                 dirname = unicode(fd.selectedFiles()[0])
                 os.mkdir(dirname)
-                streams = [ ]
-                for dev in self.devices:
-                    streams.extend(dev.streams)
-                self.rec = RawDataRecording(streams, dirname)
-                self.rec.start()
-                
-                self.actionPlay.setEnabled(False)
             else:
-                self.recording = False
-                self.recording = self.actionRec.setChecked(False)
-                
-        else:
-            # stop rec
-            self.rec.stop()
-            self.actionPlay.setEnabled(True)
+                dirname = None
+        
+        elif self.setup['options']['filename_mode'] == 'Generate with metadata':
+            name = now.strftime('%Y-%m-%d-%Hh%Mm%S,%fs')
+            name = name +' '+ '_'.join([ '{}={}'.format(k,v) for k, v in self.metadata_widget.get_metadata().items()])
+            dirname = os.path.join(basename, name)
+            os.mkdir(dirname)
+        
+        return dirname
+    
+    def start_rec(self, dirname, now):
+        assert self.recording==False
+        streams = [ ]
+        for dev in self.devices:
+            streams.extend(dev.streams)
+        self.rec_engine = RawDataRecording(streams, dirname)
+        self.rec_engine.start()
+        self.actionPlay.setEnabled(False)
+        self.recording = True
+        
+        if self.setup['options']['show_file_list']:
+            name = os.path.basename(dirname)
+            self.reclist_widget.add_rec(name, dirname, now, state = 'recording')
+    
+    def stop_rec(self):
+        assert self.recording==True
+        self.rec_engine.stop()
+        self.actionPlay.setEnabled(True)
+        self.recording = False
 
+        if self.setup['options']['show_file_list']:
+            self.reclist_widget.list[-1]['state'] = 'finished'
+        
+    
+    def on_rec_button_pushed(self):
+        
+        if self.actionRec.isChecked():
+            now = datetime.datetime.now()
+            # enable or start rec
+            if self.setup['options']['recording_mode'] == 'continuous':
+                dirname = self.get_new_dirname(now = now)
+                #~ print dirname
+                if dirname is None:
+                    self.actionRec.setChecked(False)
+                    return
+                else:
+                    self.start_rec(dirname, now)
+            else:
+                pass
+            
+        else:
+            # disable or stop rec
+            if self.setup['options']['recording_mode'] == 'continuous':
+                self.stop_rec()
+            else:
+                pass
+    
+    
     def closeEvent (self, event):
         if self.playing:
             event.ignore()

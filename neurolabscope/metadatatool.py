@@ -11,14 +11,10 @@ import copy
 from .guiutil import icons, get_dict_from_group_param, set_dict_to_param_group
 import  pyacq.gui.guiutil.mypyqtgraph as mypg
 
-#~ _params_options = [
-                                        #~ { 'name' : 'recording_mode', 'type' :'list', 'values' : ['continuous', ] },
-
 _default_param_metadata = [
                                                             { 'name' : 'animal', 'type' :'str', 'values' : '', 'renamable': True, 'removable': True },
                                                             { 'name' : 'trial', 'type' :'str', 'values' : '', 'renamable': True, 'removable': True },
                                                             ]
-#'readonly': True
 
 class CustumGroup(pg.parametertree.parameterTypes.GroupParameter):
     def __init__(self, **opts):
@@ -38,14 +34,6 @@ class MetadataWidget(QtGui.QWidget):
         mainlayout = QtGui.QVBoxLayout()
         self.setLayout(mainlayout)
         
-        #~ h = QtGui.QHBoxLayout()
-        #~ mainlayout.addLayout(h)
-        #~ h.addWidget(QtGui.QLabel('Metadata'),10)
-        
-        #~ but = QtGui.QPushButton(icon = QtGui.QIcon(':/configure.png'))
-        #~ h.addWidget(but)
-        #~ but.clicked.connect(self.open_set_dialog)
-        
         self.tree = pg.parametertree.ParameterTree(showHeader = False)
         mainlayout.addWidget(self.tree)
         
@@ -61,48 +49,8 @@ class MetadataWidget(QtGui.QWidget):
         return mypg.get_dict_from_group_param(self.params, cascade = cascade, dict_type = dict_type)
         
     def get_param_metadata(self):
-        
-        #~ print self.params.opts.get('children')
         p = [ ]
         for child in self.params.children():
-            #~ print child.name(), child.type(), child.opts
             p.append(child.opts)
-            
         return p
-        #~ return self.param_metadata
-    
-    
-    #~ def open_set_dialog(self):
-        #~ d = ConfigureMetadataWidget(param_metadata = self.param_metadata)
-        #~ if d.exec_():
-            #~ print d
-        
-            
-
-
-#~ class ConfigureMetadataWidget(QtGui.QDialog):
-    #~ def __init__(self, parent = None, param_metadata = None):
-        #~ QtGui.QDialog.__init__(self, parent)
-        
-        #~ self.param_metadata = copy.deepcopy(param_metadata)
-        
-        #~ self.setWindowTitle(u'Configure metadata tree')
-        #~ self.setWindowIcon(QtGui.QIcon(':/neurolabscope.png'))
-        
-        
-        #~ mainlayout = QtGui.QVBoxLayout()
-        #~ self.setLayout(mainlayout)
-
-        
-        
-        #~ buttonBox = QtGui.QDialogButtonBox(QtGui.QDialogButtonBox.Ok| QtGui.QDialogButtonBox.Cancel)
-        #~ mainlayout.addWidget(buttonBox)
-        #~ buttonBox.accepted.connect(self.accept)
-        #~ buttonBox.rejected.connect(self.reject)
-    
-    #~ def get(self):
-        #~ return self.param_metadata
-        
-        
-
 

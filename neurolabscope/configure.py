@@ -22,10 +22,10 @@ subdevice_to_view = {
 _params_options = [
                                         { 'name' : 'recording_mode', 'type' :'list', 'values' : ['continuous', ] },
                                         { 'name' : 'filename_mode', 'type' :'list', 'values' : ['Ask on record',  'Generate with metadata',  ] },
+                                        { 'name' : 'recording_directory', 'type' :'str', 'value' : os.path.join(unicode(QtCore.QDir.homePath()), 'NeuroLabScopeRecording') },
                                         { 'name' : 'show_metadata_tool', 'type' :'bool', 'value' : False },
                                         { 'name' : 'show_file_list', 'type' :'bool', 'value' : False },
                                         { 'name' : 'auto_save_setup_on_exit', 'type' :'bool', 'value' : True },
-                                        
                                     ]
 
 from .default_setup import default_setup
@@ -60,6 +60,10 @@ class ConfigWindow(QtGui.QDialog):
         self.actSaveSetup = QtGui.QAction(u'&Save setup', self,icon =QtGui.QIcon(':/document-save.png'))
         self.toolbar.addAction(self.actSaveSetup)
         self.actSaveSetup.triggered.connect(self.save_setup)
+        
+        self.actResetSetup = QtGui.QAction(u'&Reset setup', self,icon =QtGui.QIcon(':/edit-redo.png'))
+        self.toolbar.addAction(self.actResetSetup)
+        self.actResetSetup.triggered.connect(self.reset_setup)
 
         self.actAddDev = QtGui.QAction(u'&Add device', self,icon =QtGui.QIcon(':/list-add.png'))
         self.toolbar.addAction(self.actAddDev)
@@ -192,6 +196,9 @@ class ConfigWindow(QtGui.QDialog):
             json.dump(self.get_setup(),open(filename, 'wb'), indent=4, separators=(',', ': '))
             self.setup_filename = filename
     
+    def reset_setup(self):
+        self.setup_filename = None
+        self.set_setup(default_setup)
     
     ## devices
     def add_device(self):
