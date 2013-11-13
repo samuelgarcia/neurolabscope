@@ -16,6 +16,8 @@ class RecordingList(QtGui.QWidget):
     def __init__(self, parent  = None, param_metadata = None):
         QtGui.QWidget.__init__(self, parent = parent)
         
+        self.setMinimumSize(10,10)
+        
         mainlayout = QtGui.QVBoxLayout()
         self.setLayout(mainlayout)
         

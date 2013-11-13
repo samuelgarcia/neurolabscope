@@ -195,7 +195,8 @@ class MainWindow(QtGui.QMainWindow):
             dock.setWidget(self.reclist_widget)
             self.docks.append(dock)
             self.dock_reclist = dock
-            self.addDockWidget(QtCore.Qt.BottomDockWidgetArea, dock)
+            #~ self.addDockWidget(QtCore.Qt.BottomDockWidgetArea, dock)
+            self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, dock)
         
         p = self.setup['options']['recording_directory']
         QtCore.QDir(p).mkpath(p)
@@ -248,9 +249,6 @@ class MainWindow(QtGui.QMainWindow):
                 dev.stop()
 
     def get_new_dirname(self, now = None):
-        # TODO get basename
-        #~ basename = os.environ['HOME']#TODO
-        #~ basename = unicode(QtCore.QDir.homePath())
         basename = self.setup['options']['recording_directory']
         
         if self.setup['options']['filename_mode'] == 'Ask on record':
@@ -266,7 +264,7 @@ class MainWindow(QtGui.QMainWindow):
         
         elif self.setup['options']['filename_mode'] == 'Generate with metadata':
             name = now.strftime('%Y-%m-%d-%Hh%Mm%S,%fs')
-            name = name +' '+ '_'.join([ '{}={}'.format(k,v) for k, v in self.metadata_widget.get_metadata().items()])
+            name = name +'_'+ '_'.join([ '{}={}'.format(k,v) for k, v in self.metadata_widget.get_metadata().items()])
             dirname = os.path.join(basename, name)
             os.mkdir(dirname)
         
