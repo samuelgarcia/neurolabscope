@@ -29,6 +29,8 @@ from .default_setup import default_setup
 
 applicationname = 'Neurolabscope 0.2'
 
+
+
 class MainWindow(QtGui.QMainWindow):
     def __init__(self, parent  = None, setup = None):
         QtGui.QMainWindow.__init__(self, parent = parent)
@@ -39,6 +41,7 @@ class MainWindow(QtGui.QMainWindow):
             
             filename = self.settings['last_setup_filname']
             #~ print filename
+            #~ setup = json.load(open(filename))
             if filename is not None and os.path.exists(filename):
                 try:
                     setup = json.load(open(filename))
@@ -57,6 +60,9 @@ class MainWindow(QtGui.QMainWindow):
         #~ self.createMenus()
         self.createToolBars()
         
+        self.statusbar = QtGui.QStatusBar()
+        self.setStatusBar(self.statusbar)
+        
         self.devices_conf  = None
         self.devices = [ ]
         self.docks = [ ]
@@ -70,10 +76,8 @@ class MainWindow(QtGui.QMainWindow):
         setup['options'] = copy.deepcopy(default_setup['options'])
         setup['options'].update(d)
         
-        
-        #~ self.apply_setup(setup)
         try:
-            self.apply_setup(setup)
+            self.apply_setup(setup, filename = filename)
         except:
             self.warning_setup(filename)
             setup = default_setup
@@ -135,7 +139,7 @@ class MainWindow(QtGui.QMainWindow):
                 QtGui.QMessageBox.NoButton)
         
     
-    def apply_setup(self, setup):
+    def apply_setup(self, setup, filename = None):
         # close old one
         for dev in self.devices:
             dev.close()
@@ -201,6 +205,13 @@ class MainWindow(QtGui.QMainWindow):
         p = self.setup['options']['recording_directory']
         QtCore.QDir(p).mkpath(p)
         
+        if filename is not None:
+            self.statusbar.showMessage(filename)
+        else:
+            self.statusbar.showMessage('')
+            
+        
+        
         
 
     def save_setup(self, filename):
@@ -218,7 +229,8 @@ class MainWindow(QtGui.QMainWindow):
     def open_configure(self):
         w = ConfigWindow(parent = self, setup = self.setup)
         if w.exec_():
-            self.apply_setup(w.get_setup())
+            
+            self.apply_setup(w.get_setup(), filename = w.setup_filename)
             if w.setup_filename is not None:
                 self.settings['last_setup_filname'] = w.setup_filename
 
