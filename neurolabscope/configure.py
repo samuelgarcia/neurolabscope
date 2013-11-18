@@ -12,12 +12,10 @@ import json
 from .guiutil import icons, get_dict_from_group_param, set_dict_to_param_group
 
 from pyacq import device_classes
+print 'kljhkjlkj', device_classes
 import  pyacq.gui.guiutil.mypyqtgraph as mypg
 
-subdevice_to_view = {
-    'AnalogInput': ['Oscilloscope', 'TimeFreq'],
-    'DigitalInput':  ['OscilloscopeDigital'],
-}
+from .views import subdevice_to_view
 
 _params_options = [
                                         { 'name' : 'recording_mode', 'type' :'list', 'values' : ['continuous', ] },

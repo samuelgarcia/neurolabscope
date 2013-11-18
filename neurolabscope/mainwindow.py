@@ -76,6 +76,7 @@ class MainWindow(QtGui.QMainWindow):
         setup['options'] = copy.deepcopy(default_setup['options'])
         setup['options'].update(d)
         
+        #~ self.apply_setup(setup, filename = filename)
         try:
             self.apply_setup(setup, filename = filename)
         except:

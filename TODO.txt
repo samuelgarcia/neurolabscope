@@ -5,3 +5,5 @@
    * configure in pyacq  for Oscilloscope+TimeFreq
    * record list.
    * open recorded signals.
+   * fork on win
+   
