@@ -19,9 +19,9 @@ from .views import subdevice_to_view
 
 _params_options = [
                                         { 'name' : 'recording_mode', 'type' :'list', 'values' : ['continuous', ] },
-                                        { 'name' : 'filename_mode', 'type' :'list', 'values' : ['Ask on record',  'Generate with metadata',  ] },
+                                        { 'name' : 'filename_mode', 'type' :'list', 'values' : ['Ask on record',  'Generate with annotations',  ] },
                                         { 'name' : 'recording_directory', 'type' :'str', 'value' : os.path.join(unicode(QtCore.QDir.homePath()), 'NeuroLabScopeRecording') },
-                                        { 'name' : 'show_metadata_tool', 'type' :'bool', 'value' : False },
+                                        { 'name' : 'show_annotations', 'type' :'bool', 'value' : False },
                                         { 'name' : 'show_file_list', 'type' :'bool', 'value' : False },
                                         { 'name' : 'auto_save_setup_on_exit', 'type' :'bool', 'value' : True },
                                     ]

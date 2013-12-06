@@ -22,7 +22,7 @@ from .guiutil import icons, PickleSettings
 
 from .views import views_dict
 from .configure import ConfigWindow
-from .metadatatool import MetadataWidget
+from .annotationstool import AnnotationsWidget
 from .recordinglist import RecordingList
 from .version import version
 from .default_setup import default_setup
@@ -177,21 +177,21 @@ class MainWindow(QtGui.QMainWindow):
         self.setup = setup
         
         # consistency
-        if self.setup['options']['filename_mode'] == 'Generate with metadata':
-            self.setup['options']['show_metadata_tool'] = True
+        if self.setup['options']['filename_mode'] == 'Generate with annotations':
+            self.setup['options']['show_annotations'] = True
         
-        if self.setup['options']['show_metadata_tool']:
-            param_metadata = self.setup.get('param_metadata', None)
-            self.metadata_widget = MetadataWidget(param_metadata = param_metadata)
-            dock = QtGui.QDockWidget('Metadata')
-            dock.setWidget(self.metadata_widget)
+        if self.setup['options']['show_annotations']:
+            param_annotations = self.setup.get('param_annotations', None)
+            self.annotation_widget = AnnotationsWidget(param_annotations = param_annotations)
+            dock = QtGui.QDockWidget('Annotations')
+            dock.setWidget(self.annotation_widget)
             self.docks.append(dock)
-            self.dock_metadata = dock
+            self.dock_annotations = dock
             self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, dock)
-            self.metadata_widget.setMaximumWidth(250) # FIXME : do better
+            self.annotation_widget.setMaximumWidth(250) # FIXME : do better
         else:
-            self.dock_metadata = None
-            self.metadata_widget= None
+            self.dock_annotations = None
+            self.annotation_widget= None
             
             
         if self.setup['options']['show_file_list']:
@@ -216,8 +216,8 @@ class MainWindow(QtGui.QMainWindow):
         
 
     def save_setup(self, filename):
-        if self.setup['options']['show_metadata_tool']:
-            self.setup['param_metadata'] = self.metadata_widget.get_param_metadata()
+        if self.setup['options']['show_annotations']:
+            self.setup['param_annotations'] = self.annotation_widget.get_param_annotations()
         
         for i, view in enumerate(self.setup['views']):
             
@@ -275,9 +275,9 @@ class MainWindow(QtGui.QMainWindow):
             else:
                 dirname = None
         
-        elif self.setup['options']['filename_mode'] == 'Generate with metadata':
+        elif self.setup['options']['filename_mode'] == 'Generate with annotations':
             name = now.strftime('%Y-%m-%d-%Hh%Mm%S,%fs')
-            name = name +'_'+ '_'.join([ '{}={}'.format(k,v) for k, v in self.metadata_widget.get_metadata().items()])
+            name = name +'_'+ '_'.join([ '{}={}'.format(k,v) for k, v in self.annotation_widget.get_annotations().items()])
             dirname = os.path.join(basename, name)
             os.mkdir(dirname)
         
@@ -288,7 +288,7 @@ class MainWindow(QtGui.QMainWindow):
         streams = [ ]
         for dev in self.devices:
             streams.extend(dev.streams)
-        self.rec_engine = RawDataRecording(streams, dirname)
+        self.rec_engine = RawDataRecording(streams, dirname, annotations = self.annotation_widget.get_annotations())
         self.rec_engine.start()
         self.actionPlay.setEnabled(False)
         self.recording = True

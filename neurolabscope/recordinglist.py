@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-metadata widget
+
 """
 
 
@@ -13,7 +13,7 @@ from .guiutil import icons
 
 
 class RecordingList(QtGui.QWidget):
-    def __init__(self, parent  = None, param_metadata = None):
+    def __init__(self, parent  = None, ):
         QtGui.QWidget.__init__(self, parent = parent)
         
         self.setMinimumSize(10,10)
