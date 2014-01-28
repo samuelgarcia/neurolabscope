@@ -332,13 +332,16 @@ class NewDeviceDialog(QtGui.QDialog):
         self.scans = [ ]
         self.list.clear()
         for dev_class in device_classes:
-            for name, info_device in dev_class.get_available_devices().items():
-                if not self.show_fake.isChecked() and name.startswith('fake'):
-                    continue
-                item = QtGui.QListWidgetItem('{}'.format(name))
-                self.list.addItem(item)
-                item.setIcon(QtGui.QIcon(':/device.png'))
-                self.scans.append((name, info_device))
+            try:
+                for name, info_device in dev_class.get_available_devices().items():
+                    if not self.show_fake.isChecked() and name.startswith('fake'):
+                        continue
+                    item = QtGui.QListWidgetItem('{}'.format(name))
+                    self.list.addItem(item)
+                    item.setIcon(QtGui.QIcon(':/device.png'))
+                    self.scans.append((name, info_device))
+            except:
+                print 'Error scanning with', dev_class
     
     def get(self):
         l = self.list.selectedIndexes()
