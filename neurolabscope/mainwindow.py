@@ -288,7 +288,11 @@ class MainWindow(QtGui.QMainWindow):
         streams = [ ]
         for dev in self.devices:
             streams.extend(dev.streams)
-        self.rec_engine = RawDataRecording(streams, dirname, annotations = self.annotation_widget.get_annotations())
+        if self.annotation_widget is None:
+            annotations = { }
+        else:
+            annotations = self.annotation_widget.get_annotations()
+        self.rec_engine = RawDataRecording(streams, dirname, annotations = annotations)
         self.rec_engine.start()
         self.actionPlay.setEnabled(False)
         self.recording = True
@@ -335,7 +339,7 @@ class MainWindow(QtGui.QMainWindow):
         if self.playing:
             event.ignore()
         else:
-            if self.setup['options']['auto_save_setup_on_exit']:
+            if self.setup['options']['auto_save_setup_on_exit'] and self.settings['last_setup_filname'] is not None:
                 self.save_setup(self.settings['last_setup_filname'])
             event.accept()
     
