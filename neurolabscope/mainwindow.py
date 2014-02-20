@@ -283,16 +283,22 @@ class MainWindow(QtGui.QMainWindow):
         
         return dirname
     
+    def get_annotations(self):
+        
+        if self.annotation_widget is None:
+            annotations = { }
+        else:
+            annotations = self.annotation_widget.get_annotations()
+        annotations['rec_datetime'] = datetime.datetime.now().isoformat()
+        return annotations
+    
     def start_rec(self, dirname, now):
         assert self.recording==False
         streams = [ ]
         for dev in self.devices:
             streams.extend(dev.streams)
-        if self.annotation_widget is None:
-            annotations = { }
-        else:
-            annotations = self.annotation_widget.get_annotations()
-        self.rec_engine = RawDataRecording(streams, dirname, annotations = annotations)
+
+        self.rec_engine = RawDataRecording(streams, dirname, annotations = self.get_annotations())
         self.rec_engine.start()
         self.actionPlay.setEnabled(False)
         self.recording = True
