@@ -18,7 +18,7 @@ import  pyacq.gui.guiutil.mypyqtgraph as mypg
 from .views import subdevice_to_view
 
 _params_options = [
-                                        { 'name' : 'recording_mode', 'type' :'list', 'values' : ['continuous', ] },
+                                        { 'name' : 'recording_mode', 'type' :'list', 'values' : ['continuous', 'on_trig', ] },
                                         { 'name' : 'filename_mode', 'type' :'list', 'values' : ['Ask on record',  'Generate with annotations',  ] },
                                         { 'name' : 'recording_directory', 'type' :'str', 'value' : os.path.join(unicode(QtCore.QDir.homePath()), 'NeuroLabScopeRecording') },
                                         { 'name' : 'show_annotations', 'type' :'bool', 'value' : False },
@@ -368,7 +368,7 @@ class ConfigDeviceWidget(QtGui.QDialog):
         self.treeParam.header().hide()
         mainlayout.addWidget(self.treeParam)
         
-        conv = {str : 'str', float : 'float',  int : 'int' }
+        conv = {str : 'str', float : 'float',  int : 'int' , bool : 'bool'}
 
         all = [ ]
         for k, v in params['global_params'].items():

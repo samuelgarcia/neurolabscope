@@ -3,16 +3,20 @@
 Neurolabscope mainwindow.
 """
 
+#TODO : param triogger
+#TODO : choix trigger digital ou analog
+
 from PyQt4 import QtCore,QtGui
 import os
 from collections import OrderedDict
 import json
 import copy
 import datetime
-
+import time
 
 from pyacq import StreamHandler, FakeMultiSignals, RawDataRecording, device_classes
-from pyacq.gui import Oscilloscope
+
+from pyacq.processing.trigger import AnalogTrigger
 
 dict_device_classes = OrderedDict()
 for c in device_classes:
@@ -26,6 +30,7 @@ from .annotationstool import AnnotationsWidget
 from .recordinglist import RecordingList
 from .version import version
 from .default_setup import default_setup
+from .recordingtools import ThreadWaitStop
 
 applicationname = 'Neurolabscope 0.2'
 
@@ -135,7 +140,10 @@ class MainWindow(QtGui.QMainWindow):
         text = u'Setup file contains errors.'
         if filename is not None:
             text += ' ({})'.format(filename)
-        mb = QtGui.QMessageBox.warning(self, u'Setup file problem',text, 
+        self.warn(u'Setup file problem',text, )
+    
+    def warn(self, title, text):
+        mb = QtGui.QMessageBox.warning(self, title,text, 
                 QtGui.QMessageBox.Ok ,  QtGui.QMessageBox.Default  | QtGui.QMessageBox.Escape,
                 QtGui.QMessageBox.NoButton)
         
@@ -179,6 +187,16 @@ class MainWindow(QtGui.QMainWindow):
         # consistency
         if self.setup['options']['filename_mode'] == 'Generate with annotations':
             self.setup['options']['show_annotations'] = True
+        
+        # recording mode
+        if self.setup['options']['recording_mode'] == 'on_trig' and len(self.devices)!=1:
+            self.setup['options']['recording_mode'] == 'continuous'
+            self.warn('recording_mode', 'recording_mode = on_trig work only for 1 device')
+        
+        if self.setup['options']['recording_mode'] == 'continuous':
+            pass
+        elif self.setup['options']['recording_mode'] == 'on_trig':
+            pass
         
         if self.setup['options']['show_annotations']:
             param_annotations = self.setup.get('param_annotations', None)
@@ -289,16 +307,18 @@ class MainWindow(QtGui.QMainWindow):
             annotations = { }
         else:
             annotations = self.annotation_widget.get_annotations()
-        annotations['rec_datetime'] = datetime.datetime.now().isoformat()
+        
         return annotations
     
-    def start_rec(self, dirname, now):
+    def start_rec(self, dirname, now,bound_indexes = None):
         assert self.recording==False
         streams = [ ]
         for dev in self.devices:
             streams.extend(dev.streams)
 
-        self.rec_engine = RawDataRecording(streams, dirname, annotations = self.get_annotations())
+        self.rec_engine = RawDataRecording(streams, dirname,
+                            annotations = self.get_annotations(),
+                            bound_indexes = bound_indexes)
         self.rec_engine.start()
         self.actionPlay.setEnabled(False)
         self.recording = True
@@ -307,7 +327,7 @@ class MainWindow(QtGui.QMainWindow):
             name = os.path.basename(dirname)
             self.reclist_widget.add_rec(name, dirname, now, state = 'recording')
     
-    def stop_rec(self):
+    def continuous_stop_rec(self):
         assert self.recording==True
         self.rec_engine.stop()
         self.actionPlay.setEnabled(True)
@@ -317,12 +337,39 @@ class MainWindow(QtGui.QMainWindow):
             self.reclist_widget.list[-1]['state'] = 'finished'
         
     
+    def on_trigger_start_rec(self, pos):
+        if self.recording : return
+        print 'on_trigger_rec', pos
+        now = datetime.datetime.now()
+        dirname = self.get_new_dirname(now = now)
+        bound_indexes = { stream: (pos-1000, pos+5600) for stream in self.devices[0].streams }
+        self.start_rec(dirname, now,bound_indexes = bound_indexes)
+        
+        # Patch for the moment
+        self.thread_waitstop = ThreadWaitStop(rec_engine = self.rec_engine)
+        self.thread_waitstop.rec_terminated.connect(self.on_rec_terminated)
+        self.thread_waitstop.start()
+        
+
+    
+    def on_rec_terminated(self):
+        print 'on_rec_terminated'
+        self.thread_waitstop.wait()
+        self.thread_waitstop = None
+        self.rec_engine.stop()
+        self.recording = False
+        if self.setup['options']['show_file_list']:
+            self.reclist_widget.list[-1]['state'] = 'finished'
+
+    
     def on_rec_button_pushed(self):
+        # enable or start rec
+        rec_mode =self.setup['options']['recording_mode']
         
         if self.actionRec.isChecked():
             now = datetime.datetime.now()
-            # enable or start rec
-            if self.setup['options']['recording_mode'] == 'continuous':
+            
+            if rec_mode == 'continuous':
                 dirname = self.get_new_dirname(now = now)
                 #~ print dirname
                 if dirname is None:
@@ -330,13 +377,28 @@ class MainWindow(QtGui.QMainWindow):
                     return
                 else:
                     self.start_rec(dirname, now)
-            else:
-                pass
+                
+            elif rec_mode == 'on_trig':
+                dev = self.devices[0]
+                self.trigger_rec = AnalogTrigger(stream = dev.streams[0],
+                                        threshold = 0.25,
+                                        front = '+', 
+                                        channel = dev.nb_channel-1,
+                                        debounce_mode = 'after-stable',
+                                        debounce_time = 0.05,
+                                        callbacks = [ self.on_trigger_start_rec,  ]
+                                        )    
             
         else:
             # disable or stop rec
-            if self.setup['options']['recording_mode'] == 'continuous':
-                self.stop_rec()
+            if rec_mode == 'continuous':
+                self.continuous_stop_rec()
+            elif rec_mode == 'on_trig':
+                self.trigger_rec.stop()
+                self.trigger_rec = None
+                self.rec_engine.stop()
+                self.actionPlay.setEnabled(True)
+
             else:
                 pass
     
@@ -349,9 +411,6 @@ class MainWindow(QtGui.QMainWindow):
                 self.save_setup(self.settings['last_setup_filname'])
             event.accept()
     
-
-        
-        
 
 
 
