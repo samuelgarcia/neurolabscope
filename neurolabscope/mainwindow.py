@@ -385,13 +385,17 @@ class MainWindow(QtGui.QMainWindow):
                 
             elif rec_mode == 'on_trig':
                 dev = self.devices[0]
+                kargs = self.setup['rec_on_trigger']
+                print kargs
                 self.trigger_rec = AnalogTrigger(stream = dev.streams[0],
-                                        threshold = 0.25,
-                                        front = '+', 
+                                        
+                                        #~ threshold = 0.25,
+                                        #~ front = '+', 
                                         channel = dev.nb_channel-1,
-                                        debounce_mode = 'after-stable',
-                                        debounce_time = 0.05,
-                                        callbacks = [ self.on_trigger_start_rec,  ]
+                                        #~ debounce_mode = 'after-stable',
+                                        #~ debounce_time = 0.05,
+                                        callbacks = [ self.on_trigger_start_rec,  ],
+                                        **kargs
                                         )    
             
         else:

@@ -8,6 +8,7 @@ import pyqtgraph as pg
 import os
 import copy
 import json
+import numpy as np
 
 from .guiutil import icons, get_dict_from_group_param, set_dict_to_param_group
 
@@ -25,6 +26,18 @@ _params_options = [
                                         { 'name' : 'show_file_list', 'type' :'bool', 'value' : False },
                                         { 'name' : 'auto_save_setup_on_exit', 'type' :'bool', 'value' : True },
                                     ]
+
+_params_rec_on_trigger = [
+                                                #~ { 'name' : 'stream', 'type' :'list', 'value' : 0,  'limits':[0,1] },
+                                                #~ { 'name' : 'channel', 'type' :'int', 'value' : 0,  'limits':[0,1] },
+                                                
+                                                { 'name' : 'threshold', 'type' :'float', 'value' : 0.25 },
+                                                { 'name' : 'front', 'type' :'list', 'values' : ['+', '-', ] },
+                                                
+                                                
+                                                { 'name' : 'debounce_time', 'type' :'float', 'value' : 0.05, 'limits' : [0, np.inf], 'step' : 0.001 , 'suffix': 's', 'siPrefix': True },
+                                                { 'name' : 'debounce_mode', 'type' :'list', 'values' : [ 'no-debounce', 'after-stable' , 'before-stable' ] },
+                                            ]
 
 from .default_setup import default_setup
 
@@ -102,17 +115,34 @@ class ConfigWindow(QtGui.QDialog):
         #~ mainlayout.addWidget(QtGui.QLabel('Right click on item to remove add views'))
         v1.addWidget(QtGui.QLabel('Right click on item to remove add views'))
         
-        # Tab 2 : treeview device
+        # Tab 2 : global options
         tab2 = QtGui.QWidget()
         v2 = QtGui.QVBoxLayout()
         tab2.setLayout(v2)
-        self.tab.addTab(tab2, 'Options')
+        self.tab.addTab(tab2, 'Global options')
         
         self.tree_options = pg.parametertree.ParameterTree()
         v2.addWidget(self.tree_options)
         self.tree_options.header().hide()
         self.param_options = pg.parametertree.Parameter.create(name='options', type='group', children=_params_options)
         self.tree_options.setParameters(self.param_options)
+        
+        self.param_options.param('recording_mode').sigValueChanged.connect(self.recording_mode_changed)
+        
+        
+        # Tab 3 : rec on trigger
+        self.tab2 = tab2 = QtGui.QWidget()
+        v2 = QtGui.QVBoxLayout()
+        tab2.setLayout(v2)
+        self.tab.addTab(tab2, 'Rec on trigger options')
+        
+        self.tree_rec_on_trigger = pg.parametertree.ParameterTree()
+        v2.addWidget(self.tree_rec_on_trigger)
+        self.tree_rec_on_trigger.header().hide()
+        self.param_rec_on_trigger = pg.parametertree.Parameter.create(name='rec_on_trigger', type='group', children=_params_rec_on_trigger)
+        self.tree_rec_on_trigger.setParameters(self.param_rec_on_trigger)
+        
+        
         
         #~ mypg.get_dict_from_group_param
         #~ mypg.set_dict_to_param_group
@@ -130,6 +160,12 @@ class ConfigWindow(QtGui.QDialog):
         self.setup_filename = None
         
     
+    def recording_mode_changed(self):
+        if self.param_options['recording_mode'] == 'on_trig':
+            self.tab2.setEnabled(True)
+        else:
+            self.tab2.setEnabled(False)
+            
     
     def set_setup(self, setup):
         self.tree_devices.clear()
@@ -157,6 +193,10 @@ class ConfigWindow(QtGui.QDialog):
             subitem.addChild(viewitem)
         
         mypg.set_dict_to_param_group(self.param_options, self.setup['options'], cascade = True)
+        if 'rec_on_trigger' in self.setup:
+            mypg.set_dict_to_param_group(self.param_rec_on_trigger, self.setup['rec_on_trigger'], cascade = True)
+        
+        self.recording_mode_changed()
         
 
     def get_setup(self):
@@ -173,6 +213,7 @@ class ConfigWindow(QtGui.QDialog):
                     p['subdevice_num'] = s
                     setup['views'].append(p)
         setup['options'] = mypg.get_dict_from_group_param(self.param_options, cascade = True)
+        setup['rec_on_trigger'] = mypg.get_dict_from_group_param(self.param_rec_on_trigger, cascade = True)
         setup['param_annotations'] = self.setup.get('param_annotations', None)
         
         return setup
