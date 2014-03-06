@@ -198,8 +198,10 @@ class MainWindow(QtGui.QMainWindow):
         elif self.setup['options']['recording_mode'] == 'on_trig':
             pass
         
+        print 'lkjlkjlkj'
         if self.setup['options']['show_annotations']:
             param_annotations = self.setup.get('param_annotations', None)
+            print 'param_annotations', param_annotations
             self.annotation_widget = AnnotationsWidget(param_annotations = param_annotations)
             dock = QtGui.QDockWidget('Annotations')
             dock.setWidget(self.annotation_widget)
@@ -246,6 +248,9 @@ class MainWindow(QtGui.QMainWindow):
         
 
     def open_configure(self):
+        if self.setup['options']['show_annotations']:
+            self.setup['param_annotations'] = self.annotation_widget.get_param_annotations()
+
         w = ConfigWindow(parent = self, setup = self.setup)
         if w.exec_():
             

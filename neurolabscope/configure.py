@@ -12,7 +12,7 @@ import json
 from .guiutil import icons, get_dict_from_group_param, set_dict_to_param_group
 
 from pyacq import device_classes
-print 'kljhkjlkj', device_classes
+
 import  pyacq.gui.guiutil.mypyqtgraph as mypg
 
 from .views import subdevice_to_view
@@ -173,12 +173,14 @@ class ConfigWindow(QtGui.QDialog):
                     p['subdevice_num'] = s
                     setup['views'].append(p)
         setup['options'] = mypg.get_dict_from_group_param(self.param_options, cascade = True)
+        setup['param_annotations'] = self.setup.get('param_annotations', None)
         
         return setup
     
     def load_setup(self):
         fd = QtGui.QFileDialog(fileMode= QtGui.QFileDialog.ExistingFile, acceptMode = QtGui.QFileDialog.AcceptOpen)
-        fd.setNameFilter('Neurolabscope setup (*.json)')
+        fd.setNameFilters(['Neurolabscope setup (*.json)', 'All (*)'])
+        fd.setViewMode( QtGui.QFileDialog.Detail )
         if fd.exec_():
             filename = unicode(fd.selectedFiles()[0])
             self.set_setup(json.load(open(filename, 'rb')))
