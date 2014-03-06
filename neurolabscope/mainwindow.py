@@ -152,9 +152,11 @@ class MainWindow(QtGui.QMainWindow):
         # close old one
         for dev in self.devices:
             dev.close()
+
         for dock in self.docks:
-            if hasattr(dock.widget(), 'timer'):
-                dock.widget().timer.stop()
+            # do something in pyacq to close properly
+            if hasattr(dock.widget(), 'stop'):
+                dock.widget().stop()
             self.removeDockWidget(dock)
         
         # Devices
@@ -178,14 +180,18 @@ class MainWindow(QtGui.QMainWindow):
             self.docks.append(dock)
             self.addDockWidget(QtCore.Qt.RightDockWidgetArea, dock)
         
-        
         self.actionPlay.setEnabled(True)
         
         # Global options
         self.setup = setup
         
         # consistency
+        if self.setup['options']['recording_mode'] == 'on_trig':
+            print 'force generate with annotation'
+            self.setup['options']['filename_mode'] = 'Generate with annotations'
+        
         if self.setup['options']['filename_mode'] == 'Generate with annotations':
+            print 'force show_annotations'
             self.setup['options']['show_annotations'] = True
         
         # recording mode
@@ -198,10 +204,8 @@ class MainWindow(QtGui.QMainWindow):
         elif self.setup['options']['recording_mode'] == 'on_trig':
             pass
         
-        print 'lkjlkjlkj'
         if self.setup['options']['show_annotations']:
             param_annotations = self.setup.get('param_annotations', None)
-            print 'param_annotations', param_annotations
             self.annotation_widget = AnnotationsWidget(param_annotations = param_annotations)
             dock = QtGui.QDockWidget('Annotations')
             dock.setWidget(self.annotation_widget)
@@ -212,8 +216,7 @@ class MainWindow(QtGui.QMainWindow):
         else:
             self.dock_annotations = None
             self.annotation_widget= None
-            
-            
+        
         if self.setup['options']['show_file_list']:
             self.reclist_widget = RecordingList()
             dock = QtGui.QDockWidget('RecordingList')
@@ -222,7 +225,6 @@ class MainWindow(QtGui.QMainWindow):
             self.dock_reclist = dock
             #~ self.addDockWidget(QtCore.Qt.BottomDockWidgetArea, dock)
             self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, dock)
-        
         p = self.setup['options']['recording_directory']
         QtCore.QDir(p).mkpath(p)
         
@@ -231,9 +233,6 @@ class MainWindow(QtGui.QMainWindow):
         else:
             self.statusbar.showMessage('')
             
-        
-        
-        
 
     def save_setup(self, filename):
         if self.setup['options']['show_annotations']:
@@ -387,6 +386,7 @@ class MainWindow(QtGui.QMainWindow):
                 dev = self.devices[0]
                 kargs = self.setup['rec_on_trigger']
                 print kargs
+                self.rec_engine = None
                 self.trigger_rec = AnalogTrigger(stream = dev.streams[0],
                                         
                                         #~ threshold = 0.25,
@@ -405,7 +405,8 @@ class MainWindow(QtGui.QMainWindow):
             elif rec_mode == 'on_trig':
                 self.trigger_rec.stop()
                 self.trigger_rec = None
-                self.rec_engine.stop()
+                if self.rec_engine is not None:
+                    self.rec_engine.stop()
                 self.actionPlay.setEnabled(True)
 
             else:
