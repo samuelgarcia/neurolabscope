@@ -310,7 +310,7 @@ class MainWindow(QtGui.QMainWindow):
         
         return annotations
     
-    def start_rec(self, dirname, now,bound_indexes = None):
+    def start_rec(self, dirname, now,bound_indexes = {}):
         assert self.recording==False
         streams = [ ]
         for dev in self.devices:
