@@ -28,13 +28,12 @@ _params_options = [
                                     ]
 
 _params_rec_on_trigger = [
-                                                #~ { 'name' : 'stream', 'type' :'list', 'value' : 0,  'limits':[0,1] },
-                                                #~ { 'name' : 'channel', 'type' :'int', 'value' : 0,  'limits':[0,1] },
-                                                
+                                                { 'name' : 'rec_start_time', 'type' :'float', 'value' : 0., 'step' : 1 , 'suffix': 's', 'siPrefix': True },
+                                                { 'name' : 'rec_stop_time', 'type' :'float', 'value' : 5., 'step' : 1 , 'suffix': 's', 'siPrefix': True },
+                                                { 'name' : 'subdevice_num', 'type' :'int', 'value' : 0,  'limits':[0,np.inf] },
+                                                { 'name' : 'channel', 'type' :'int', 'value' : 0,  'limits':[0,np.inf] },
                                                 { 'name' : 'threshold', 'type' :'float', 'value' : 0.25 },
                                                 { 'name' : 'front', 'type' :'list', 'values' : ['+', '-', ] },
-                                                
-                                                
                                                 { 'name' : 'debounce_time', 'type' :'float', 'value' : 0.05, 'limits' : [0, np.inf], 'step' : 0.001 , 'suffix': 's', 'siPrefix': True },
                                                 { 'name' : 'debounce_mode', 'type' :'list', 'values' : [ 'no-debounce', 'after-stable' , 'before-stable' ] },
                                             ]

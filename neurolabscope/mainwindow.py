@@ -14,9 +14,11 @@ import copy
 import datetime
 import time
 
+import numpy as np
+
 from pyacq import StreamHandler, FakeMultiSignals, RawDataRecording, device_classes
 
-from pyacq.processing.trigger import AnalogTrigger
+from pyacq.processing.trigger import AnalogTrigger, DigitalTrigger
 
 dict_device_classes = OrderedDict()
 for c in device_classes:
@@ -343,13 +345,13 @@ class MainWindow(QtGui.QMainWindow):
     
     def on_trigger_start_rec(self, pos):
         if self.recording : return
-        print 'on_trigger_rec', pos
         now = datetime.datetime.now()
         dirname = self.get_new_dirname(now = now)
-        bound_indexes = { stream: (pos-1000, pos+5600) for stream in self.devices[0].streams }
+        l1, l2 = self.recontrig_limits
+        bound_indexes = { stream: (pos+l1, pos+l2) for stream in self.devices[0].streams }
         self.start_rec(dirname, now,bound_indexes = bound_indexes)
         
-        # Patch for the moment
+        # Patch for the moment because rec engine do not send signal
         self.thread_waitstop = ThreadWaitStop(rec_engine = self.rec_engine)
         self.thread_waitstop.rec_terminated.connect(self.on_rec_terminated)
         self.thread_waitstop.start()
@@ -357,7 +359,6 @@ class MainWindow(QtGui.QMainWindow):
 
     
     def on_rec_terminated(self):
-        print 'on_rec_terminated'
         self.thread_waitstop.wait()
         self.thread_waitstop = None
         self.rec_engine.stop()
@@ -375,7 +376,6 @@ class MainWindow(QtGui.QMainWindow):
             
             if rec_mode == 'continuous':
                 dirname = self.get_new_dirname(now = now)
-                #~ print dirname
                 if dirname is None:
                     self.actionRec.setChecked(False)
                     return
@@ -383,21 +383,28 @@ class MainWindow(QtGui.QMainWindow):
                     self.start_rec(dirname, now)
                 
             elif rec_mode == 'on_trig':
+                #TODO checks stream_num on apply_setup
+                kargs = dict(self.setup['rec_on_trigger'])
+                
+                assert len(self.devices) == 1, 'Rec on trig support only one device for the moment'
                 dev = self.devices[0]
-                kargs = self.setup['rec_on_trigger']
-                print kargs
+                subdevice_num = kargs.pop('subdevice_num')
+                assert subdevice_num<=len(dev.streams), 'Rec on trig : wrong subdevice_num'
+                stream =  dev.streams[subdevice_num]
+                assert kargs['channel']<dev.nb_channel, 'Rec on trig : wrong channel'
+                
+                self.recontrig_limits = (np.array([kargs.pop('rec_start_time'), kargs.pop('rec_stop_time')])*stream.sampling_rate).astype(int)
+                
+                if type(stream).__name__ == 'AnalogSignalSharedMemStream':
+                    Trigger = AnalogTrigger
+                elif type(stream).__name__ == 'DigitalSignalSharedMemStream':
+                    Trigger = DigitalTrigger
+                    
                 self.rec_engine = None
-                self.trigger_rec = AnalogTrigger(stream = dev.streams[0],
-                                        
-                                        #~ threshold = 0.25,
-                                        #~ front = '+', 
-                                        channel = dev.nb_channel-1,
-                                        #~ debounce_mode = 'after-stable',
-                                        #~ debounce_time = 0.05,
-                                        callbacks = [ self.on_trigger_start_rec,  ],
-                                        **kargs
-                                        )    
-            
+                self.trigger_rec = Trigger(stream = stream,
+                                                            callbacks = [ self.on_trigger_start_rec,  ],
+                                                            **kargs)
+                
         else:
             # disable or stop rec
             if rec_mode == 'continuous':
