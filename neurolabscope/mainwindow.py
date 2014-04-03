@@ -158,9 +158,10 @@ class MainWindow(QtGui.QMainWindow):
         for dock in self.docks:
             # do something in pyacq to close properly
             if hasattr(dock.widget(), 'stop'):
+                print dock.widget()
                 dock.widget().stop()
             self.removeDockWidget(dock)
-        
+
         # Devices
         self.devices = [ ]
         for dev_info in setup['devices']:
@@ -170,7 +171,7 @@ class MainWindow(QtGui.QMainWindow):
                                 **dev_info['global_params'])
             dev.initialize()
             self.devices.append(dev)
-        
+
         # Views
         self.docks = [ ]
         for view in setup['views']:
@@ -215,6 +216,11 @@ class MainWindow(QtGui.QMainWindow):
             self.dock_annotations = dock
             self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, dock)
             self.annotation_widget.setMaximumWidth(250) # FIXME : do better
+            
+            for dock in self.docks:
+                if hasattr(dock.widget(), 'annotation_changed'):
+                    dock.widget().annotation_changed.connect(self.annotation_widget.set_annotations)
+            
         else:
             self.dock_annotations = None
             self.annotation_widget= None
@@ -258,7 +264,8 @@ class MainWindow(QtGui.QMainWindow):
             self.apply_setup(w.get_setup(), filename = w.setup_filename)
             if w.setup_filename is not None:
                 self.settings['last_setup_filname'] = w.setup_filename
-
+    
+    
 
     def play_pause(self, play = None):
         

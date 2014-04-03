@@ -14,6 +14,10 @@ def test1():
     w = AnnotationsWidget()
     w.show()
     
+    w.set_annotations({'new_field' : 'yep1'})
+    
+    w.set_annotations({'new_field' : 'yep2'})
+    
     app.exec_()
     print w.get_annotations()
     print w.get_param_annotations()

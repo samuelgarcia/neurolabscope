@@ -12,8 +12,8 @@ from .guiutil import icons, get_dict_from_group_param, set_dict_to_param_group
 import  pyacq.gui.guiutil.mypyqtgraph as mypg
 
 _default_param_annotations = [
-                                                            { 'name' : 'animal', 'type' :'str', 'values' : '', 'renamable': True, 'removable': True },
-                                                            { 'name' : 'trial', 'type' :'str', 'values' : '', 'renamable': True, 'removable': True },
+                                                            { 'name' : 'animal', 'type' :'str', 'value' : '', 'renamable': True, 'removable': True },
+                                                            { 'name' : 'trial', 'type' :'str', 'value' : '', 'renamable': True, 'removable': True },
                                                             ]
 
 class CustumGroup(pg.parametertree.parameterTypes.GroupParameter):
@@ -22,7 +22,7 @@ class CustumGroup(pg.parametertree.parameterTypes.GroupParameter):
         self.n = len(opts['children'])
     
     def addNew(self):
-        self.addChild({ 'name' : 'new_field_{}'.format(self.n), 'type' :'str', 'values' : '', 'renamable': True, 'removable': True  })
+        self.addChild({ 'name' : 'new_field_{}'.format(self.n), 'type' :'str', 'value' : '', 'renamable': True, 'removable': True  })
         self.n += 1
 
 
@@ -53,4 +53,15 @@ class AnnotationsWidget(QtGui.QWidget):
         for child in self.params.children():
             p.append(child.opts)
         return p
-
+    
+    def set_annotations(self, annotations):
+        allowed = { float:'float' , int:'int', str:'str'}
+        
+        for k, v in annotations.items():
+            if type(v) not in allowed: continue
+            if k not in [p.name() for p in self.params.children()]:
+                self.params.addChild({ 'name' : k, 'type' : allowed[type(v)], 'value' : v, 'renamable': True, 'removable': True  })
+            else:
+                self.params.param(k).setValue(v)
+        
+        
