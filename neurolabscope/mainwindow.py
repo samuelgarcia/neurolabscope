@@ -288,6 +288,8 @@ class MainWindow(QtGui.QMainWindow):
             # stop devices
             self.actionRec.setEnabled(False)
             self.actionConf.setEnabled(True)
+            if self.setup['options']['auto_save_setup_on_exit'] and self.settings['last_setup_filname'] is not None:
+                self.save_setup(self.settings['last_setup_filname'])
             
             for dev in self.devices:
                 dev.stop()
@@ -342,6 +344,9 @@ class MainWindow(QtGui.QMainWindow):
     
     def continuous_stop_rec(self):
         assert self.recording==True
+        if self.setup['options']['auto_save_setup_on_exit'] and self.settings['last_setup_filname'] is not None:
+            self.save_setup(self.settings['last_setup_filname'])
+        
         self.rec_engine.stop()
         self.actionPlay.setEnabled(True)
         self.recording = False
