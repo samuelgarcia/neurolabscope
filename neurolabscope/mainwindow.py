@@ -387,6 +387,7 @@ class MainWindow(QtGui.QMainWindow):
             now = datetime.datetime.now()
             
             if rec_mode == 'continuous':
+                self.setFocus()# patch tout force annotations parmas
                 dirname = self.get_new_dirname(now = now)
                 if dirname is None:
                     self.actionRec.setChecked(False)
