@@ -42,7 +42,7 @@ from .default_setup import default_setup
 
 
 class ConfigWindow(QtGui.QDialog):
-    def __init__(self, parent  = None, setup = None):
+    def __init__(self, parent  = None, setup = None, setup_filename = None):
         QtGui.QDialog.__init__(self, parent = parent)
         
         if setup is None: 
@@ -156,7 +156,7 @@ class ConfigWindow(QtGui.QDialog):
 
         self.set_setup(setup)
         self.tree_devices.expandAll()
-        self.setup_filename = None
+        self.setup_filename = setup_filename
         
     
     def recording_mode_changed(self):
@@ -229,12 +229,16 @@ class ConfigWindow(QtGui.QDialog):
 
         
     def save_setup(self):
-        fd = QtGui.QFileDialog(fileMode= QtGui.QFileDialog.AnyFile, acceptMode = QtGui.QFileDialog.AcceptSave)
-        fd.setNameFilter('Neurolabscope setup (*.json)')
-        if fd.exec_():
-            filename = unicode(fd.selectedFiles()[0])
-            json.dump(self.get_setup(),open(filename, 'wb'), indent=4, separators=(',', ': '))
-            self.setup_filename = filename
+        if self.setup_filename is None:
+            fd = QtGui.QFileDialog(fileMode= QtGui.QFileDialog.AnyFile, acceptMode = QtGui.QFileDialog.AcceptSave, defaultSuffix = 'json')
+            fd.setNameFilter('Neurolabscope setup (*.json)')
+            if fd.exec_():
+                filename = unicode(fd.selectedFiles()[0])
+                json.dump(self.get_setup(),open(filename, 'wb'), indent=4, separators=(',', ': '))
+                self.setup_filename = filename
+        else:
+            json.dump(self.get_setup(),open(self.setup_filename, 'wb'), indent=4, separators=(',', ': '))
+            
     
     def reset_setup(self):
         self.setup_filename = None

@@ -240,6 +240,7 @@ class MainWindow(QtGui.QMainWindow):
             self.statusbar.showMessage(filename)
         else:
             self.statusbar.showMessage('')
+        self.setup_filename = filename
             
 
     def save_setup(self, filename):
@@ -260,14 +261,11 @@ class MainWindow(QtGui.QMainWindow):
         if self.setup['options']['show_annotations']:
             self.setup['param_annotations'] = self.annotation_widget.get_param_annotations()
 
-        w = ConfigWindow(parent = self, setup = self.setup)
+        w = ConfigWindow(parent = self, setup = self.setup, setup_filename = self.setup_filename)
         if w.exec_():
-            
             self.apply_setup(w.get_setup(), filename = w.setup_filename)
             if w.setup_filename is not None:
                 self.settings['last_setup_filname'] = w.setup_filename
-    
-    
 
     def play_pause(self, play = None):
         
