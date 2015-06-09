@@ -250,8 +250,10 @@ class MainWindow(QtGui.QMainWindow):
             
             view['params'] = self.docks[i].widget().get_params()
         
-        json.dump(self.setup,open(filename, 'wb'), indent=4, separators=(',', ': '))
-        
+        try:
+            json.dump(self.setup,open(filename, 'wb'), indent=4, separators=(',', ': '))
+        except:
+            print 'erreur save setup'
         
 
     def open_configure(self):
