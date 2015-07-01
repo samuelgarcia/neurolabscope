@@ -462,16 +462,30 @@ class ConfigDeviceWidget(QtGui.QDialog):
         
         self.treeParam.setParameters(self.params, showTop=True)
         
-        
-         
+        h = QtGui.QHBoxLayout()
+        mainlayout.addLayout(h)
+        but = QtGui.QPushButton('Select all')
+        but.clicked.connect(self.select_all)
+        h.addWidget(but)
+        but = QtGui.QPushButton('Unselect all')
+        but.clicked.connect(self.unselect_all)
+        h.addWidget(but)
+        h.addStretch()
         
         buttonBox = QtGui.QDialogButtonBox(QtGui.QDialogButtonBox.Ok| QtGui.QDialogButtonBox.Cancel)
         mainlayout.addWidget(buttonBox)
         buttonBox.accepted.connect(self.accept)
         buttonBox.rejected.connect(self.reject)
-        
-        
-
+    
+    def select_all(self):
+        for s, subdevicename in enumerate(self.subdev_names):
+            for paramchannel in self.params.param(subdevicename).children():
+                paramchannel['selected'] = True
+    
+    def unselect_all(self):
+        for s, subdevicename in enumerate(self.subdev_names):
+            for paramchannel in self.params.param(subdevicename).children():
+                paramchannel['selected'] = False
 
     def get(self):
         
