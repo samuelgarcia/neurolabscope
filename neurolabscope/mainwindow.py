@@ -161,7 +161,9 @@ class MainWindow(QtGui.QMainWindow):
                 print dock.widget()
                 dock.widget().stop()
             self.removeDockWidget(dock)
-
+        
+        self.streamhandler.reset()
+        
         # Devices
         self.devices = [ ]
         for dev_info in setup['devices']:
