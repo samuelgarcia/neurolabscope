@@ -411,10 +411,8 @@ class ConfigDeviceWidget(QtGui.QDialog):
         self.setLayout(mainlayout)
 
         self.treeParam = pg.parametertree.ParameterTree()
-        self.treeParam.header().hide()
-        mainlayout.addWidget(self.treeParam)
         
-        conv = {str : 'str', float : 'float',  int : 'int' , bool : 'bool'}
+        conv = {str : 'str', float : 'float',  int : 'int' , bool : 'bool', unicode : 'str'}
 
         all = [ ]
         for k, v in params['global_params'].items():
@@ -459,8 +457,12 @@ class ConfigDeviceWidget(QtGui.QDialog):
             all.append(d)
         
         self.params = pg.parametertree.Parameter.create(name='Parameters for {}'.format(params['board_name']), type='group', children=all)
-        
+        print self.params
         self.treeParam.setParameters(self.params, showTop=True)
+
+        self.treeParam.header().hide()
+        mainlayout.addWidget(self.treeParam)
+        
         
         
          
