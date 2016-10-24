@@ -141,7 +141,7 @@ class MainWindow(QtGui.QMainWindow):
     def warning_setup(self, filename = None):
         text = u'Setup file contains errors.'
         if filename is not None:
-            text += ' ({})'.format(filename)
+            text += u' ({})'.format(filename)
         self.warn(u'Setup file problem',text, )
     
     def warn(self, title, text):
